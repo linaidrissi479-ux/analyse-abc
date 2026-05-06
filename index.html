@@ -2,8 +2,10 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<title>Schneider Electric — ABC/FSN (Correction Commandes Uniques)</title>
+<title>Schneider Electric — ABC/FSN avec Export Excel</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+<!-- Ajout de la bibliothèque pour l'export Excel -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 :root { --g:#009639;--gd:#007a2f;--gl:#e8f5ee;--bg:#f0f2f0;--s:#fff;--b:#e2e6e2;--t:#1a1f1a;--r:#c0392b;--rb:#fdf0ef;--o:#d97706;--ob:#fffbeb; }
@@ -11,39 +13,39 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--t);margin
 .nav{background:var(--s);border-bottom:1px solid var(--b);height:55px;display:flex;align-items:center;padding:0 24px;gap:15px;margin:-20px -20px 20px -20px;}
 .logo{width:30px;height:30px;background:var(--g);border-radius:6px;display:flex;align-items:center;justify-content:center;}
 .tabs{display:flex;gap:20px;margin-bottom:20px;border-bottom:1px solid var(--b);background:white;padding:0 20px;}
-.tab{padding:15px 0;cursor:pointer;font-weight:600;color:var(--t3);border-bottom:3px solid transparent;}
+.tab{padding:15px 0;cursor:pointer;font-weight:600;color:#8a9b8a;border-bottom:3px solid transparent;}
 .tab.active{color:var(--g);border-bottom-color:var(--g);}
 .card{background:var(--s);border:1px solid var(--b);border-radius:12px;padding:20px;margin-bottom:20px;}
 .config{display:flex;gap:15px;align-items:end;margin-bottom:20px;background:var(--gl);padding:15px;border-radius:8px;}
 table{width:100%;border-collapse:collapse;font-size:13px;}
-th{background:var(--s2);padding:12px;text-align:left;text-transform:uppercase;font-size:11px;border-bottom:2px solid var(--b);}
+th{background:#f9faf9;padding:12px;text-align:left;text-transform:uppercase;font-size:11px;border-bottom:2px solid var(--b);}
 td{padding:10px 12px;border-bottom:1px solid var(--b);}
 .right{text-align:right;font-family:'DM Mono';}
 .tag{padding:3px 8px;border-radius:4px;font-weight:700;font-size:11px;}
-.tag-A, .tag-F { background: var(--rb); color: var(--r); }
-.tag-B, .tag-S { background: var(--ob); color: var(--o); }
-.tag-C, .tag-N { background: var(--gl); color: var(--g); }
+.tag-AF, .tag-A, .tag-F { background: var(--rb); color: var(--r); }
+button{padding:10px 20px; background:var(--g); color:white; border:none; border-radius:6px; cursor:pointer; font-weight:600;}
+button.secondary{background:#1a1f1a; margin-top:20px;}
 </style>
 </head>
 <body>
 
 <div class="nav">
   <div class="logo"><svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
-  <div style="font-weight:600">Schneider Electric — Analyse Commandes Uniques</div>
+  <div style="font-weight:600">Schneider Electric — Analyse & Export Excel</div>
 </div>
 
 <div class="tabs">
   <div class="tab active" onclick="showTab(0)">1. Import</div>
-  <div class="tab" onclick="showTab(1)">2. ABC (Volume)</div>
-  <div class="tab" onclick="showTab(2)">3. FSN (Fréquence)</div>
-  <div class="tab" onclick="showTab(3)">4. Matrice AF-CN</div>
+  <div class="tab" onclick="showTab(1)">2. ABC</div>
+  <div class="tab" onclick="showTab(2)">3. FSN</div>
+  <div class="tab" onclick="showTab(3)">4. Matrice & Export</div>
 </div>
 
-<div id="p0" class="content active">
-  <div class="card" style="text-align:center; padding:40px; border:2px dashed var(--b);">
+<div id="p0" class="content">
+  <div class="card" style="text-align:center; padding:50px;">
     <input type="file" id="csv" accept=".csv" style="display:none">
-    <button onclick="document.getElementById('csv').click()" style="padding:12px 24px; background:var(--g); color:white; border:none; border-radius:6px; cursor:pointer; font-weight:600;">Choisir le fichier CSV</button>
-    <p id="fn" style="margin-top:10px; color:var(--t3);"></p>
+    <button onclick="document.getElementById('csv').click()">📁 Charger bd_sorties.csv</button>
+    <p id="fn" style="margin-top:10px;"></p>
   </div>
 </div>
 
@@ -51,115 +53,98 @@ td{padding:10px 12px;border-bottom:1px solid var(--b);}
   <div class="config">
     <div><label>Article</label><br><select id="abcA"></select></div>
     <div><label>Quantité</label><br><select id="abcQ"></select></div>
-    <button onclick="doABC()" class="tab" style="background:var(--g); color:white; border:none; padding:8px 15px; border-radius:4px;">Calculer ABC</button>
+    <button onclick="doABC()">Calculer ABC</button>
   </div>
-  <div class="card"><table><thead><tr><th>Article</th><th class="right">Volume</th><th class="right">%</th><th>Classe</th></tr></thead><tbody id="abcB"></tbody></table></div>
+  <div class="card"><table id="tableABC"><thead><tr><th>Article</th><th class="right">Volume</th><th>Classe</th></tr></thead><tbody id="abcB"></tbody></table></div>
 </div>
 
 <div id="p2" class="content" style="display:none">
   <div class="config">
     <div><label>Article</label><br><select id="fsnA"></select></div>
-    <div><label>N° Livraison / Commande</label><br><select id="fsnL"></select></div>
-    <button onclick="doFSN()" style="background:var(--g); color:white; border:none; padding:8px 15px; border-radius:4px; cursor:pointer;">Calculer FSN</button>
+    <div><label>Livraison</label><br><select id="fsnL"></select></div>
+    <button onclick="doFSN()">Calculer FSN</button>
   </div>
-  <p style="font-size:12px; color:var(--t2); margin-bottom:10px;">Note : Le code compte le nombre de <strong>numéros de livraisons uniques</strong> par article.</p>
-  <div class="card"><table><thead><tr><th>Article</th><th class="right">Nb Livraisons Uniques</th><th class="right">%</th><th>Classe</th></tr></thead><tbody id="fsnB"></tbody></table></div>
+  <div class="card"><table id="tableFSN"><thead><tr><th>Article</th><th class="right">Nb Livr. Uniques</th><th>Classe</th></tr></thead><tbody id="fsnB"></tbody></table></div>
 </div>
 
 <div id="p3" class="content" style="display:none">
   <div class="card" style="text-align:center">
-    <button onclick="doMatrix()" style="background:var(--g); color:white; border:none; padding:10px 20px; border-radius:6px; cursor:pointer; margin-bottom:20px;">Générer Matrice AF -> CN</button>
-    <table style="width:auto; margin:auto; border:2px solid var(--b);">
+    <button onclick="doMatrix()">Générer la Matrice</button>
+    <table style="width:auto; margin:20px auto; border:2px solid var(--b);">
       <thead><tr><th>ABC \ FSN</th><th>F</th><th>S</th><th>N</th></tr></thead>
       <tbody id="mB"></tbody>
     </table>
+    <button class="secondary" onclick="exportToExcel()">📥 Télécharger le fichier EXCEL final</button>
   </div>
-  <div class="card"><h3>Détails AF -> CN</h3><table><thead><tr><th>Article</th><th class="right">Volume</th><th class="right">Nb Livr.</th><th>Code</th></tr></thead><tbody id="lB"></tbody></table></div>
+  <div class="card"><h3>Détail des données exportées</h3><table><thead><tr><th>Article</th><th class="right">Volume</th><th class="right">Nb Livr.</th><th>Code Final</th></tr></thead><tbody id="lB"></tbody></table></div>
 </div>
 
 <script>
-let rows = []; let abc = {}; let fsn = {};
+let rows = []; let abc = {}; let fsn = {}; let finalData = [];
+
 function showTab(i) {
   document.querySelectorAll('.tab').forEach((t,idx) => t.classList.toggle('active', idx===i));
   document.querySelectorAll('.content').forEach((c,idx) => c.style.display = (idx===i?'block':'none'));
 }
 
 document.getElementById('csv').onchange = e => {
-  const file = e.target.files[0];
-  document.getElementById('fn').innerText = file.name;
-  Papa.parse(file, { header: true, skipEmptyLines: true, complete: r => {
+  Papa.parse(e.target.files[0], { header: true, skipEmptyLines: true, complete: r => {
     rows = (r.meta.fields.length <= 1) ? null : r.data;
-    if (!rows) { Papa.parse(file, { header: true, skipEmptyLines: true, delimiter: ';', complete: r2 => { rows = r2.data; fill(r2.meta.fields); }}); }
+    if (!rows) { Papa.parse(e.target.files[0], { header: true, skipEmptyLines: true, delimiter: ';', complete: r2 => { rows = r2.data; fill(r2.meta.fields); }}); }
     else { fill(r.meta.fields); }
   }});
 };
 
-function fill(f) {
-  document.querySelectorAll('select').forEach(s => { s.innerHTML = ''; f.forEach(x => s.add(new Option(x, x))); });
-  showTab(1);
-}
+function fill(f) { document.querySelectorAll('select').forEach(s => { s.innerHTML = ''; f.forEach(x => s.add(new Option(x, x))); }); showTab(1); }
 
 function doABC() {
   const aCol = document.getElementById('abcA').value, qCol = document.getElementById('abcQ').value, stats = {};
   rows.forEach(r => {
-    const a = String(r[aCol] || '').trim().toUpperCase();
-    const q = parseFloat(String(r[qCol] || '0').replace(/\s/g, '').replace(',', '.')) || 0;
-    if (a) stats[a] = (stats[a] || 0) + q;
+    const a = String(r[aCol]||'').trim().toUpperCase(), q = parseFloat(String(r[qCol]||'0').replace(/\s/g,'').replace(',','.'))||0;
+    if(a) stats[a] = (stats[a]||0) + q;
   });
-  let sorted = Object.entries(stats).sort((a,b) => b[1] - a[1]);
-  let cum = 0, total = sorted.reduce((s,x) => s + x[1], 0);
+  let sorted = Object.entries(stats).sort((a,b)=>b[1]-a[1]), cum=0, tot=sorted.reduce((s,x)=>s+x[1],0);
   abc = {};
-  document.getElementById('abcB').innerHTML = sorted.map(([ref, q], i) => {
-    cum += q; let p = (cum/total)*100; let cl = p <= 80.0001 ? 'A' : (p <= 95.0001 ? 'B' : 'C');
-    abc[ref] = { q, cl };
-    return `<tr><td>${ref}</td><td class="right">${Math.round(q).toLocaleString()}</td><td class="right">${p.toFixed(2)}%</td><td><span class="tag tag-${cl}">${cl}</span></td></tr>`;
+  document.getElementById('abcB').innerHTML = sorted.map(([ref,q])=>{
+    cum+=q; let p=(cum/tot)*100, cl=p<=80.0001?'A':(p<=95.0001?'B':'C');
+    abc[ref]={q,cl}; return `<tr><td>${ref}</td><td class="right">${Math.round(q)}</td><td>${cl}</td></tr>`;
   }).join('');
 }
 
 function doFSN() {
-  const aCol = document.getElementById('fsnA').value;
-  const lCol = document.getElementById('fsnL').value;
-  const stats = {};
-  
-  // Utilisation d'un Set pour ne compter qu'une seule fois la livraison par article
-  const articleOrders = {};
-
+  const aCol = document.getElementById('fsnA').value, lCol = document.getElementById('fsnL').value, artOrders = {};
   rows.forEach(r => {
-    const art = String(r[aCol] || '').trim().toUpperCase();
-    const livr = String(r[lCol] || '').trim();
-    if (art && livr) {
-      if (!articleOrders[art]) articleOrders[art] = new Set();
-      articleOrders[art].add(livr);
-    }
+    const a = String(r[aCol]||'').trim().toUpperCase(), l = String(r[lCol]||'').trim();
+    if(a && l) { if(!artOrders[a]) artOrders[a]=new Set(); artOrders[a].add(l); }
   });
-
-  Object.entries(articleOrders).forEach(([art, set]) => {
-    stats[art] = set.size; // Taille du Set = nombre de livraisons uniques
-  });
-
-  let sorted = Object.entries(stats).sort((a,b) => b[1] - a[1]);
-  let cum = 0, total = sorted.reduce((s,x) => s + x[1], 0);
+  let sorted = Object.entries(artOrders).map(([a,s])=>[a,s.size]).sort((a,b)=>b[1]-a[1]), cum=0, tot=sorted.reduce((s,x)=>s+x[1],0);
   fsn = {};
-  document.getElementById('fsnB').innerHTML = sorted.map(([ref, c], i) => {
-    cum += c; let p = (cum/total)*100; 
-    let cl = p <= 79.986 ? 'F' : (p <= 94.999 ? 'S' : 'N');
-    fsn[ref] = { c, cl };
-    return `<tr><td>${ref}</td><td class="right">${c}</td><td class="right">${p.toFixed(2)}%</td><td><span class="tag tag-${cl}">${cl}</span></td></tr>`;
+  document.getElementById('fsnB').innerHTML = sorted.map(([ref,c])=>{
+    cum+=c; let p=(cum/tot)*100, cl=p<=79.986?'F':(p<=94.999?'S':'N');
+    fsn[ref]={c,cl}; return `<tr><td>${ref}</td><td class="right">${c}</td><td>${cl}</td></tr>`;
   }).join('');
 }
 
 function doMatrix() {
-  const m = { A:{F:0,S:0,N:0}, B:{F:0,S:0,N:0}, C:{F:0,S:0,N:0} }, list = [];
+  const m = { A:{F:0,S:0,N:0}, B:{F:0,S:0,N:0}, C:{F:0,S:0,N:0} }; finalData = [];
   const refs = new Set([...Object.keys(abc), ...Object.keys(fsn)]);
   refs.forEach(r => {
-    const a = abc[r] || { cl: 'C', q: 0 }, f = fsn[r] || { cl: 'N', c: 0 };
+    const a = abc[r] || { cl:'C', q:0 }, f = fsn[r] || { cl:'N', c:0 };
     m[a.cl][f.cl]++;
-    list.push({ r, code: a.cl + f.cl, q: a.q, c: f.c });
+    finalData.push({ Article: r, Volume: Math.round(a.q), Nb_Livraisons: f.c, Classe_ABC: a.cl, Classe_FSN: f.cl, Code_Matrice: a.cl+f.cl });
   });
-  document.getElementById('mB').innerHTML = ['A','B','C'].map(a => `<tr><th style="padding:10px; background:var(--gl)">${a}</th><td style="border:1px solid var(--b)">${m[a].F}</td><td style="border:1px solid var(--b)">${m[a].S}</td><td style="border:1px solid var(--b)">${m[a].N}</td></tr>`).join('');
-  const prio = { 'AF':1, 'AS':2, 'AN':3, 'BF':4, 'BS':5, 'BN':6, 'CF':7, 'CS':8, 'CN':9 };
-  list.sort((a,b) => prio[a.code] - prio[b.code] || b.q - a.q);
-  document.getElementById('lB').innerHTML = list.map(i => `<tr><td>${i.r}</td><td class="right">${Math.round(i.q).toLocaleString()}</td><td class="right">${i.c}</td><td style="font-weight:700; color:var(--g)">${i.code}</td></tr>`).join('');
+  document.getElementById('mB').innerHTML = ['A','B','C'].map(a => `<tr><th>${a}</th><td>${m[a].F}</td><td>${m[a].S}</td><td>${m[a].N}</td></tr>`).join('');
+  const prio = { 'AF':1,'AS':2,'AN':3,'BF':4,'BS':5,'BN':6,'CF':7,'CS':8,'CN':9 };
+  finalData.sort((a,b) => prio[a.Code_Matrice] - prio[b.Code_Matrice] || b.Volume - a.Volume);
+  document.getElementById('lB').innerHTML = finalData.map(i => `<tr><td>${i.Article}</td><td class="right">${i.Volume}</td><td class="right">${i.Nb_Livraisons}</td><td style="font-weight:700;color:var(--g)">${i.Code_Matrice}</td></tr>`).join('');
+}
+
+function exportToExcel() {
+  if (finalData.length === 0) return alert("Calculez d'abord la matrice !");
+  const ws = XLSX.utils.json_to_sheet(finalData);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Resultats_ABC_FSN");
+  XLSX.writeFile(wb, "Analyse_Schneider_Final.xlsx");
 }
 </script>
 </body>
