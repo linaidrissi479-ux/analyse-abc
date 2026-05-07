@@ -39,22 +39,14 @@
     <div class="card">
         <label>Sélectionner le fichier CSV : </label>
         <input type="file" id="csvInput" accept=".csv">
-        
         <div id="mappingSection" style="display:none; margin-top:20px;">
             <div class="config-section">
-                <div>
-                    <label>Colonne Article</label><br>
-                    <select id="mapArt"></select>
-                </div>
-                <div>
-                    <label>Colonne Quantité</label><br>
-                    <select id="mapQty"></select>
-                </div>
+                <div><label>Colonne Article</label><br><select id="mapArt"></select></div>
+                <div><label>Colonne Quantité</label><br><select id="mapQty"></select></div>
                 <button onclick="processABC()">Exécuter l'analyse</button>
             </div>
         </div>
     </div>
-
     <div id="resultsWrapper" class="card" style="display:none">
         <table id="tableABC">
             <thead>
@@ -78,7 +70,7 @@
             <div class="kpi-card">CLASSE B (16%) <span id="valB" class="kpi-value" style="color:#ff9900">0</span></div>
             <div class="kpi-card">CLASSE C (8%) <span id="valC" class="kpi-value" style="color:#008000">0</span></div>
         </div>
-        <button onclick="exportToExcel()" style="background:#333">Exporter le rapport avec % (XLSX)</button>
+        <button onclick="exportToExcel()" style="background:#333">Exporter le rapport complet avec % (XLSX)</button>
     </div>
 </div>
 
@@ -94,23 +86,16 @@
     }
 
     document.getElementById('csvInput').onchange = function(e) {
-        rawData = [];
-        finalResults = [];
+        rawData = []; finalResults = [];
         document.getElementById('resultsWrapper').style.display = 'none';
-
         Papa.parse(e.target.files[0], {
-            header: true,
-            skipEmptyLines: true,
+            header: true, skipEmptyLines: true,
             complete: function(r) {
                 rawData = r.data;
-                const cols = r.meta.fields;
                 const selA = document.getElementById('mapArt');
                 const selQ = document.getElementById('mapQty');
                 selA.innerHTML = ''; selQ.innerHTML = '';
-                cols.forEach(c => {
-                    selA.add(new Option(c, c));
-                    selQ.add(new Option(c, c));
-                });
+                r.meta.fields.forEach(c => { selA.add(new Option(c, c)); selQ.add(new Option(c, c)); });
                 document.getElementById('mappingSection').style.display = 'block';
             }
         });
@@ -119,7 +104,6 @@
     function processABC() {
         const aCol = document.getElementById('mapArt').value;
         const qCol = document.getElementById('mapQty').value;
-        
         let aggregate = {};
         rawData.forEach(row => {
             let ref = row[aCol] ? row[aCol].trim() : '';
@@ -129,9 +113,7 @@
 
         let sorted = Object.entries(aggregate).sort((a, b) => b[1] - a[1]);
         let total = sorted.reduce((sum, item) => sum + item[1], 0);
-        
-        let cumul = 0;
-        let summary = { A: 0, B: 0, C: 0 };
+        let cumul = 0; let summary = { A: 0, B: 0, C: 0 };
         finalResults = [];
 
         sorted.forEach(([art, qte]) => {
@@ -140,39 +122,27 @@
             let cls = percentVal <= 80.0001 ? 'A' : (percentVal <= 95.0001 ? 'B' : 'C');
             summary[cls]++;
             finalResults.push({ 
-                'Article': art, 
-                'Qté livr.': qte, 
-                'Cumul': cumul, 
-                '% Cumulé': percentVal.toFixed(2) + '%', 
-                'Classe': cls 
+                'Article': art, 'Qté livr.': qte, 'Cumul': cumul, '% Cumulé': percentVal.toFixed(2) + '%', 'Classe': cls 
             });
         });
 
         const tbody = document.querySelector('#tableABC tbody');
         tbody.innerHTML = finalResults.map(r => `
-            <tr>
-                <td>${r['Article']}</td>
-                <td>${r['Qté livr.']}</td>
-                <td>${r['Cumul']}</td>
-                <td>${r['% Cumulé']}</td>
-                <td class="cl-${r['Classe']}">${r['Classe']}</td>
-            </tr>
+            <tr><td>${r['Article']}</td><td>${r['Qté livr.']}</td><td>${r['Cumul']}</td><td>${r['% Cumulé']}</td><td class="cl-${r['Classe']}">${r['Classe']}</td></tr>
         `).join('');
         document.getElementById('resultsWrapper').style.display = 'block';
-
         document.getElementById('valA').innerText = Math.ceil(summary.A * 0.33) + " articles";
         document.getElementById('valB').innerText = Math.ceil(summary.B * 0.16) + " articles";
         document.getElementById('valC').innerText = Math.ceil(summary.C * 0.08) + " articles";
     }
 
     function exportToExcel() {
-        // Cette partie crée le fichier Excel avec TOUTES les colonnes présentes dans finalResults
+        if (finalResults.length === 0) return alert("Veuillez d'abord lancer l'analyse.");
         const ws = XLSX.utils.json_to_sheet(finalResults);
         const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "Analyse_ABC_Complet");
-        XLSX.writeFile(wb, "Rapport_ABC_Avec_Pourcentages.xlsx");
+        XLSX.utils.book_append_sheet(wb, ws, "Rapport_Complet");
+        XLSX.writeFile(wb, "Inventaire_Schneider_Avec_Pourcentages.xlsx");
     }
 </script>
-
 </body>
 </html>
