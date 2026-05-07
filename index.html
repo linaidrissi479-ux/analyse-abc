@@ -2,27 +2,25 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Schneider Electric — ABC/FSN Digitalisation</title>
+    <title>Schneider Electric — ABC Digitalisation</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
-        :root { --g:#009639; --gd:#007a2f; --gl:#e8f5ee; --bg:#f0f2f0; --s:#fff; --b:#e2e6e2; --t:#1a1f1a; --r:#c0392b; }
+        :root { --g:#009639; --bg:#f0f2f0; --s:#fff; --b:#e2e6e2; --t:#1a1f1a; --r:#c0392b; }
         body { font-family:'DM Sans', sans-serif; background:var(--bg); color:var(--t); margin:0; padding:20px; }
         .nav { background:var(--s); border-bottom:1px solid var(--b); height:55px; display:flex; align-items:center; padding:0 24px; gap:15px; margin:-20px -20px 20px -20px; }
-        .logo { width:30px; height:30px; background:var(--g); border-radius:6px; display:flex; align-items:center; justify-content:center; }
         .tabs { display:flex; gap:20px; margin-bottom:20px; border-bottom:1px solid var(--b); background:white; padding:0 20px; }
         .tab { padding:15px 0; cursor:pointer; font-weight:600; color:#8a9b8a; border-bottom:3px solid transparent; }
         .tab.active { color:var(--g); border-bottom-color:var(--g); }
         .card { background:var(--s); border:1px solid var(--b); border-radius:12px; padding:20px; margin-bottom:20px; }
-        .config { display:flex; gap:15px; align-items:end; margin-bottom:20px; background:var(--gl); padding:15px; border-radius:8px; }
+        .config { display:flex; gap:15px; align-items:end; margin-bottom:20px; background:#f0f7f3; padding:15px; border-radius:8px; border:1px solid var(--g); }
         .stats-grid { display:flex; gap:20px; margin-bottom:25px; }
         .stat-card { flex:1; padding:15px; border-radius:8px; border:1px solid var(--b); text-align:center; background:white; }
-        .quota-box { background:#fdf0ef; color:var(--r); padding:8px; margin-top:10px; border-radius:4px; font-weight:bold; border:1px solid #fab1a0; }
+        .quota-box { background:#fdf0ef; color:var(--r); padding:8px; margin-top:10px; border-radius:4px; font-weight:bold; }
         table { width:100%; border-collapse:collapse; font-size:13px; }
-        th { background:#f9faf9; padding:12px; text-align:left; text-transform:uppercase; font-size:11px; border-bottom:2px solid var(--b); }
+        th { background:#f9faf9; padding:12px; text-align:left; border-bottom:2px solid var(--b); }
         td { padding:10px 12px; border-bottom:1px solid var(--b); }
-        .right { text-align:right; font-family:'DM Mono'; }
         button { padding:10px 20px; background:var(--g); color:white; border:none; border-radius:6px; cursor:pointer; font-weight:600; }
         .tag { padding:4px 8px; border-radius:4px; font-weight:700; font-size:11px; }
         .tag-A { background:#fdeaea; color:#e74c3c; }
@@ -33,8 +31,7 @@
 <body>
 
 <div class="nav">
-    <div class="logo"><svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
-    <div style="font-weight:600">Schneider Electric — Digitalisation Rapport</div>
+    <div style="font-weight:600">Schneider Electric — Analyseur Dynamique</div>
 </div>
 
 <div class="tabs">
@@ -44,21 +41,21 @@
 
 <div id="tab1" class="content-div">
     <div class="card">
-        <button onclick="document.getElementById('csv').click()">📁 Choisir le fichier d'extraction</button>
+        <button onclick="document.getElementById('csv').click()">📁 Charger un NOUVEAU fichier (.csv)</button>
         <input type="file" id="csv" accept=".csv" style="display:none">
         
         <div id="setup" style="display:none; margin-top:20px;">
             <div class="config">
-                <div><label>Colonne Article</label><br><select id="selA"></select></div>
-                <div><label>Colonne Quantité</label><br><select id="selQ"></select></div>
-                <button onclick="doAnalysis()">Calculer ABC</button>
+                <div><label>Choisir Article</label><br><select id="selA"></select></div>
+                <div><label>Choisir Quantité</label><br><select id="selQ"></select></div>
+                <button onclick="doAnalysis()">🔥 CALCULER LES NOUVELLES VALEURS</button>
             </div>
         </div>
     </div>
 
     <div id="resABC" class="card" style="display:none">
-        <table>
-            <thead><tr><th>Article</th><th class="right">Volume</th><th class="right">% Cumulé</th><th>Classe</th></tr></thead>
+        <table id="mainTable">
+            <thead><tr><th>Article</th><th>Volume</th><th>% Cumulé</th><th>Classe</th></tr></thead>
             <tbody id="bodyABC"></tbody>
         </table>
     </div>
@@ -66,22 +63,19 @@
 
 <div id="tab2" class="content-div" style="display:none">
     <div class="card">
-        <h3>Quotas de comptage requis (selon rapport)</h3>
+        <h3>Quotas basés sur le fichier actuel</h3>
         <div class="stats-grid">
-            <div class="stat-card"><b>CLASSE A</b><div class="quota-box" id="qA">0</div><small>Objectif 33% / mois</small></div>
-            <div class="stat-card"><b>CLASSE B</b><div class="quota-box" id="qB" style="color:#d4ac0d; background:#fef9e7;">0</div><small>Objectif 16% / mois</small></div>
-            <div class="stat-card"><b>CLASSE C</b><div class="quota-box" id="qC" style="color:#27ae60; background:#eafaf1;">0</div><small>Objectif 8% / mois</small></div>
+            <div class="stat-card"><b>CLASSE A</b><div class="quota-box" id="qA">0</div><small>33% du stock A</small></div>
+            <div class="stat-card"><b>CLASSE B</b><div class="quota-box" id="qB" style="color:#d4ac0d;">0</div><small>16% du stock B</small></div>
+            <div class="stat-card"><b>CLASSE C</b><div class="quota-box" id="qC" style="color:#27ae60;">0</div><small>8% du stock C</small></div>
         </div>
-        <button onclick="exportExcel()" style="background:#1a1f1a; width:100%;">📥 Télécharger le Plan de Comptage (.xlsx)</button>
-        <table style="margin-top:20px;">
-            <thead><tr><th>Ordre</th><th>Article</th><th>Classe</th><th>Fréquence</th></tr></thead>
-            <tbody id="bodyPlan"></tbody>
-        </table>
+        <button onclick="exportExcel()" style="background:#1a1f1a; width:100%;">📥 EXPORTER LES DONNÉES CALCULÉES (.xlsx)</button>
     </div>
 </div>
 
 <script>
-let rawRows = []; let processedData = [];
+let currentFileRows = []; 
+let currentResults = [];
 
 function switchTab(id) {
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -90,11 +84,18 @@ function switchTab(id) {
     document.getElementById(id).style.display = 'block';
 }
 
+// CETTE FONCTION VIDE TOUT AVANT DE CHARGER
 document.getElementById('csv').onchange = e => {
+    // Reset complet
+    currentFileRows = []; 
+    currentResults = [];
+    document.getElementById('resABC').style.display = 'none';
+    document.getElementById('setup').style.display = 'none';
+
     Papa.parse(e.target.files[0], {
         header: true, skipEmptyLines: true,
         complete: function(r) {
-            rawRows = r.data;
+            currentFileRows = r.data;
             const f = r.meta.fields;
             const sA = document.getElementById('selA'), sQ = document.getElementById('selQ');
             sA.innerHTML = ''; sQ.innerHTML = '';
@@ -105,9 +106,11 @@ document.getElementById('csv').onchange = e => {
 };
 
 function doAnalysis() {
-    const aCol = document.getElementById('selA').value, qCol = document.getElementById('selQ').value;
+    const aCol = document.getElementById('selA').value;
+    const qCol = document.getElementById('selQ').value;
+    
     let stats = {};
-    rawRows.forEach(r => {
+    currentFileRows.forEach(r => {
         let a = String(r[aCol] || '').trim().toUpperCase();
         let q = parseFloat(String(r[qCol] || '0').replace(/\s/g,'').replace(',','.')) || 0;
         if(a) stats[a] = (stats[a] || 0) + q;
@@ -116,37 +119,33 @@ function doAnalysis() {
     let sorted = Object.entries(stats).sort((a,b) => b[1] - a[1]);
     let totVol = sorted.reduce((s,x) => s + x[1], 0);
     let cum = 0, counts = {A:0, B:0, C:0};
-    processedData = [];
+    currentResults = [];
 
     sorted.forEach(([ref, q]) => {
         cum += q;
         let p = (cum/totVol)*100;
         let cl = p <= 80.0001 ? 'A' : (p <= 95.0001 ? 'B' : 'C');
         counts[cl]++;
-        processedData.push({ art: ref, vol: Math.round(q), p: p.toFixed(2), cl: cl });
+        currentResults.push({ Article: ref, Volume: Math.round(q), Pourcent: p.toFixed(2), Classe: cl });
     });
 
-    // Rendu Onglet 1
-    document.getElementById('bodyABC').innerHTML = processedData.map(i => `
-        <tr><td>${i.art}</td><td class="right">${i.vol}</td><td class="right">${i.p}%</td><td><span class="tag tag-${i.cl}">${i.cl}</span></td></tr>
+    // Mise à jour Affichage
+    document.getElementById('bodyABC').innerHTML = currentResults.map(i => `
+        <tr><td>${i.Article}</td><td>${i.Volume}</td><td>${i.Pourcent}%</td><td><span class="tag tag-${i.Classe}">${i.Classe}</span></td></tr>
     `).join('');
     document.getElementById('resABC').style.display = 'block';
 
-    // Rendu Onglet 2
+    // Mise à jour Quotas
     document.getElementById('qA').innerText = Math.ceil(counts.A * 0.33) + " articles";
     document.getElementById('qB').innerText = Math.ceil(counts.B * 0.16) + " articles";
     document.getElementById('qC').innerText = Math.ceil(counts.C * 0.08) + " articles";
-
-    document.getElementById('bodyPlan').innerHTML = processedData.map((i, index) => `
-        <tr><td>${index + 1}</td><td>${i.art}</td><td><span class="tag tag-${i.cl}">${i.cl}</span></td><td>${i.cl==='A'?'4x / an':(i.cl==='B'?'2x / an':'1x / an')}</td></tr>
-    `).join('');
 }
 
 function exportExcel() {
-    const ws = XLSX.utils.json_to_sheet(processedData);
+    const ws = XLSX.utils.json_to_sheet(currentResults);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Plan_Schneider");
-    XLSX.writeFile(wb, "Plan_Inventaire_Schneider.xlsx");
+    XLSX.utils.book_append_sheet(wb, ws, "Calculs");
+    XLSX.writeFile(wb, "Nouveaux_Calculs_Schneider.xlsx");
 }
 </script>
 </body>
