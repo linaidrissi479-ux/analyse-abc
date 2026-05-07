@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<title>Schneider Electric — ABC/FSN Final (Excel uniquement)</title>
+<title>Schneider Electric — ABC/FSN Final</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -24,7 +24,7 @@ td{padding:10px 12px;border-bottom:1px solid var(--b);}
 .tag-A, .tag-F { background: var(--rb); color: var(--r); }
 .tag-B, .tag-S { background: var(--ob); color: var(--o); }
 .tag-C, .tag-N { background: var(--gl); color: var(--g); }
-button{padding:10px 20px; background:var(--g); color:white; border:none; border-radius:6px; cursor:pointer; font-weight:600;}
+button{padding:12px 20px; background:var(--g); color:white; border:none; border-radius:6px; cursor:pointer; font-weight:600;}
 button.btn-excel{background:#1a1f1a; margin-top:20px; width: 100%; font-size: 16px;}
 </style>
 </head>
@@ -39,13 +39,14 @@ button.btn-excel{background:#1a1f1a; margin-top:20px; width: 100%; font-size: 16
   <div class="tab active" onclick="showTab(0)">1. Import</div>
   <div class="tab" onclick="showTab(1)">2. ABC (Volume)</div>
   <div class="tab" onclick="showTab(2)">3. FSN (Fréquence)</div>
-  <div class="tab" onclick="showTab(3)">4. Résultats & Excel</div>
+  <div class="tab" onclick="showTab(3)">4. Résultats & Export</div>
 </div>
 
 <div id="p0" class="content">
-  <div class="card" style="text-align:center; padding:50px;">
+  <div class="card" style="text-align:center; padding:60px;">
     <input type="file" id="csv" accept=".csv" style="display:none">
-    <button onclick="document.getElementById('csv').click()">📁 Charger bd_sorties.csv</button>
+    <button onclick="document.getElementById('csv').click()">📁 Choisir le fichier d'extraction (.csv)</button>
+    <p id="fn" style="margin-top:15px; color:#8a9b8a; font-size:13px;"></p>
   </div>
 </div>
 
@@ -61,7 +62,7 @@ button.btn-excel{background:#1a1f1a; margin-top:20px; width: 100%; font-size: 16
 <div id="p2" class="content" style="display:none">
   <div class="config">
     <div><label>Article</label><br><select id="fsnA"></select></div>
-    <div><label>Livraison</label><br><select id="fsnL"></select></div>
+    <div><label>Livraison (N° Unique)</label><br><select id="fsnL"></select></div>
     <button onclick="doFSN()">Calculer FSN</button>
   </div>
   <div class="card"><table><thead><tr><th>Article</th><th class="right">Nb Livr. Uniques</th><th class="right">% Cumulé</th><th>Classe</th></tr></thead><tbody id="fsnB"></tbody></table></div>
@@ -74,7 +75,7 @@ button.btn-excel{background:#1a1f1a; margin-top:20px; width: 100%; font-size: 16
       <thead><tr><th>ABC \ FSN</th><th>F</th><th>S</th><th>N</th></tr></thead>
       <tbody id="mB"></tbody>
     </table>
-    <button class="btn-excel" onclick="exportExcel()">📥 TÉLÉCHARGER LES RÉSULTATS (.XLSX)</button>
+    <button class="btn-excel" onclick="exportExcel()">📥 TÉLÉCHARGER LE FICHIER EXCEL FINAL (.XLSX)</button>
   </div>
   <div class="card">
     <h3>Classement Prioritaire</h3>
@@ -91,13 +92,20 @@ function showTab(i) {
 }
 
 document.getElementById('csv').onchange = e => {
-  Papa.parse(e.target.files[0], { header: true, skipEmptyLines: true, complete: r => {
-    rows = r.data;
-    const f = r.meta.fields;
-    document.querySelectorAll('select').forEach(s => { s.innerHTML = ''; f.forEach(x => s.add(new Option(x, x))); });
-    showTab(1);
+  const file = e.target.files[0];
+  document.getElementById('fn').innerText = "Fichier chargé : " + file.name;
+  Papa.parse(file, { header: true, skipEmptyLines: true, complete: r => {
+    rows = (r.meta.fields.length <= 1) ? null : r.data;
+    if (!rows) { 
+      Papa.parse(file, { header: true, skipEmptyLines: true, delimiter: ';', complete: r2 => { rows = r2.data; fillSel(r2.meta.fields); }}); 
+    } else { rows = r.data; fillSel(r.meta.fields); }
   }});
 };
+
+function fillSel(f) {
+  document.querySelectorAll('select').forEach(s => { s.innerHTML = ''; f.forEach(x => s.add(new Option(x, x))); });
+  showTab(1);
+}
 
 function doABC() {
   const aCol = document.getElementById('abcA').value, qCol = document.getElementById('abcQ').value, stats = {};
@@ -131,29 +139,22 @@ function doMatrix() {
   const m = { A:{F:0,S:0,N:0}, B:{F:0,S:0,N:0}, C:{F:0,S:0,N:0} }; finalData = [];
   const refs = new Set([...Object.keys(abc), ...Object.keys(fsn)]);
   refs.forEach(r => {
-    const a = abc[r] || { cl:'C', q:0, p:0 }, f = fsn[r] || { cl:'N', c:0, p:0 };
+    const a = abc[r] || { cl:'C', q:0 }; const f = fsn[r] || { cl:'N', c:0 };
     m[a.cl][f.cl]++;
-    finalData.push({ 
-        "Article": r, 
-        "Volume": Math.round(a.q), 
-        "Nb Livraisons": f.c, 
-        "ABC": a.cl, 
-        "FSN": f.cl, 
-        "Code Final": a.cl + f.cl 
-    });
+    finalData.push({ "Article": r, "Volume": Math.round(a.q), "Nombre Livraisons": f.c, "ABC": a.cl, "FSN": f.cl, "Code Final": a.cl + f.cl });
   });
   document.getElementById('mB').innerHTML = ['A','B','C'].map(a => `<tr><th style="padding:10px; background:#f4f4f4">${a}</th><td>${m[a].F}</td><td>${m[a].S}</td><td>${m[a].N}</td></tr>`).join('');
   const prio = { 'AF':1,'AS':2,'AN':3,'BF':4,'BS':5,'BN':6,'CF':7,'CS':8,'CN':9 };
-  finalData.sort((a,b) => prio[a["Code Final"]] - prio[b["Code Final"]] || b["Volume"] - a["Volume"]);
-  document.getElementById('lB').innerHTML = finalData.map(i => `<tr><td>${i.Article}</td><td class="right">${i.Volume.toLocaleString()}</td><td class="right">${i["Nb Livraisons"]}</td><td style="font-weight:700;color:var(--g)">${i["Code Final"]}</td></tr>`).join('');
+  finalData.sort((a,b) => prio[a["Code Final"]] - prio[b["Code Final"]] || b.Volume - a.Volume);
+  document.getElementById('lB').innerHTML = finalData.map(i => `<tr><td>${i.Article}</td><td class="right">${i.Volume.toLocaleString()}</td><td class="right">${i["Nombre Livraisons"]}</td><td style="font-weight:700;color:var(--g)">${i["Code Final"]}</td></tr>`).join('');
 }
 
 function exportExcel() {
-  if(finalData.length === 0) return alert("Cliquez d'abord sur Générer Matrice !");
+  if(finalData.length === 0) return alert("Générez la matrice d'abord !");
   const ws = XLSX.utils.json_to_sheet(finalData);
   const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Analyse Stock");
-  XLSX.writeFile(wb, "Analyse_Schneider_Stock.xlsx");
+  XLSX.utils.book_append_sheet(wb, ws, "Analyse");
+  XLSX.writeFile(wb, "Analyse_Schneider_Export.xlsx");
 }
 </script>
 </body>
