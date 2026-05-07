@@ -2,68 +2,65 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Schneider Electric - Analyseur ABC</title>
+    <title>Schneider Electric - Analyse ABC Officielle</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
-        :root { --schneider-green: #009639; --bg-gray: #f4f4f4; --border: #d1d1d1; }
-        body { font-family: Arial, sans-serif; background-color: var(--bg-gray); margin: 0; padding: 20px; color: #333; }
-        .header { background-color: var(--schneider-green); color: white; padding: 15px; margin-bottom: 20px; }
-        .tabs { display: flex; margin-bottom: 20px; border-bottom: 2px solid var(--border); }
-        .tab { padding: 10px 20px; cursor: pointer; background: #eee; border: 1px solid var(--border); border-bottom: none; margin-right: 5px; font-weight: bold; }
-        .tab.active { background: white; border-top: 3px solid var(--schneider-green); color: var(--schneider-green); }
-        .card { background: white; padding: 20px; border: 1px solid var(--border); margin-bottom: 20px; }
-        .config-bar { background: #e9f5ed; padding: 15px; border: 1px solid var(--schneider-green); display: flex; gap: 15px; align-items: flex-end; }
-        .stats-container { display: flex; gap: 20px; margin-bottom: 20px; }
-        .stat-box { flex: 1; padding: 15px; border: 1px solid var(--border); text-align: center; background: white; }
-        .quota-num { font-size: 24px; font-weight: bold; color: #d9534f; display: block; margin: 10px 0; }
+        :root { --schneider-green: #009639; --border-color: #d1d1d1; }
+        body { font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 20px; }
+        .header { background-color: var(--schneider-green); color: white; padding: 15px; font-weight: bold; margin-bottom: 20px; }
+        .tabs { display: flex; border-bottom: 2px solid var(--border-color); margin-bottom: 20px; }
+        .tab { padding: 10px 25px; cursor: pointer; background: #e0e0e0; border: 1px solid var(--border-color); border-bottom: none; margin-right: 5px; font-weight: bold; }
+        .tab.active { background: white; color: var(--schneider-green); border-top: 3px solid var(--schneider-green); }
+        .card { background: white; padding: 20px; border: 1px solid var(--border-color); margin-bottom: 20px; }
+        .config-section { background: #f9f9f9; padding: 15px; border: 1px solid var(--schneider-green); display: flex; gap: 20px; align-items: flex-end; }
+        .kpi-row { display: flex; gap: 20px; margin-bottom: 20px; }
+        .kpi-card { flex: 1; border: 1px solid var(--border-color); padding: 15px; text-align: center; background: white; }
+        .kpi-value { font-size: 24px; font-weight: bold; color: #cc0000; display: block; margin-top: 10px; }
         table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 13px; }
-        th, td { border: 1px solid var(--border); padding: 8px; text-align: left; }
-        th { background-color: #f2f2f2; }
-        button { padding: 10px 15px; background-color: var(--schneider-green); color: white; border: none; cursor: pointer; font-weight: bold; }
-        button:hover { background-color: #007a2f; }
-        .tag-A { color: #d9534f; font-weight: bold; }
-        .tag-B { color: #f0ad4e; font-weight: bold; }
-        .tag-C { color: #5cb85c; font-weight: bold; }
+        th, td { border: 1px solid var(--border-color); padding: 10px; text-align: left; }
+        th { background-color: #f2f2f2; text-transform: uppercase; }
+        button { padding: 10px 20px; background-color: var(--schneider-green); color: white; border: none; cursor: pointer; font-weight: bold; }
+        .cl-A { color: #cc0000; font-weight: bold; }
+        .cl-B { color: #ff9900; font-weight: bold; }
+        .cl-C { color: #008000; font-weight: bold; }
     </style>
 </head>
 <body>
 
-<div class="header">
-    <h2 style="margin:0;">Système de Pilotage Inventaire</h2>
-</div>
+<div class="header">SCHNEIDER ELECTRIC - ANALYSEUR D'INVENTAIRE TOURNANT</div>
 
 <div class="tabs">
     <div class="tab active" onclick="showTab('tab1')">ANALYSE ABC</div>
-    <div class="tab" onclick="showTab('tab2')">PLAN DE COMPTAGE</div>
+    <div class="tab" onclick="showTab('tab2')">QUOTAS DE COMPTAGE</div>
 </div>
 
-<div id="tab1" class="tab-content">
+<div id="tab1" class="content">
     <div class="card">
-        <label>Importer fichier CSV : </label>
-        <input type="file" id="csvFile" accept=".csv">
+        <label>Sélectionner le fichier CSV : </label>
+        <input type="file" id="csvInput" accept=".csv">
         
-        <div id="columnSelection" style="display:none; margin-top:20px;">
-            <div class="config-bar">
+        <div id="mappingSection" style="display:none; margin-top:20px;">
+            <div class="config-section">
                 <div>
                     <label>Colonne Article</label><br>
-                    <select id="selectArticle"></select>
+                    <select id="mapArt"></select>
                 </div>
                 <div>
                     <label>Colonne Quantité</label><br>
-                    <select id="selectQty"></select>
+                    <select id="mapQty"></select>
                 </div>
-                <button onclick="calculateABC()">Lancer le Calcul</button>
+                <button onclick="processABC()">Exécuter l'analyse</button>
             </div>
         </div>
     </div>
 
-    <div id="resultsCard" class="card" style="display:none">
-        <table id="abcTable">
+    <div id="resultsWrapper" class="card" style="display:none">
+        <table id="tableABC">
             <thead>
                 <tr>
                     <th>Article</th>
-                    <th>Volume Total</th>
+                    <th>Qté livr.</th>
                     <th>Cumul</th>
                     <th>% Cumulé</th>
                     <th>Classe</th>
@@ -74,102 +71,106 @@
     </div>
 </div>
 
-<div id="tab2" class="tab-content" style="display:none">
+<div id="tab2" class="content" style="display:none">
     <div class="card">
-        <div class="stats-container">
-            <div class="stat-box">Classe A (33%) <span id="qA" class="quota-num">0</span></div>
-            <div class="stat-box">Classe B (16%) <span id="qB" class="quota-num" style="color:#f0ad4e">0</span></div>
-            <div class="stat-box">Classe C (8%) <span id="qC" class="quota-num" style="color:#5cb85c">0</span></div>
+        <div class="kpi-row">
+            <div class="kpi-card">CLASSE A (33%) <span id="valA" class="kpi-value">0</span></div>
+            <div class="kpi-card">CLASSE B (16%) <span id="valB" class="kpi-value" style="color:#ff9900">0</span></div>
+            <div class="kpi-card">CLASSE C (8%) <span id="valC" class="kpi-value" style="color:#008000">0</span></div>
         </div>
-        <button onclick="downloadXLSX()" style="background:#333">Exporter vers Excel</button>
+        <button onclick="exportToExcel()" style="background:#333">Exporter le rapport avec % (XLSX)</button>
     </div>
 </div>
 
 <script>
     let rawData = [];
-    let processedResults = [];
+    let finalResults = [];
 
-    function showTab(tabId) {
-        document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
-        document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
-        document.getElementById(tabId).style.display = 'block';
+    function showTab(id) {
+        document.querySelectorAll('.content').forEach(c => c.style.display = 'none');
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.getElementById(id).style.display = 'block';
         event.currentTarget.classList.add('active');
     }
 
-    document.getElementById('csvFile').onchange = function(e) {
-        // Reset des données précédentes
+    document.getElementById('csvInput').onchange = function(e) {
         rawData = [];
-        processedResults = [];
-        document.getElementById('resultsCard').style.display = 'none';
-        
+        finalResults = [];
+        document.getElementById('resultsWrapper').style.display = 'none';
+
         Papa.parse(e.target.files[0], {
             header: true,
             skipEmptyLines: true,
-            complete: function(results) {
-                rawData = results.data;
-                const fields = results.meta.fields;
-                const selA = document.getElementById('selectArticle');
-                const selQ = document.getElementById('selectQty');
+            complete: function(r) {
+                rawData = r.data;
+                const cols = r.meta.fields;
+                const selA = document.getElementById('mapArt');
+                const selQ = document.getElementById('mapQty');
                 selA.innerHTML = ''; selQ.innerHTML = '';
-                fields.forEach(f => {
-                    selA.add(new Option(f, f));
-                    selQ.add(new Option(f, f));
+                cols.forEach(c => {
+                    selA.add(new Option(c, c));
+                    selQ.add(new Option(c, c));
                 });
-                document.getElementById('columnSelection').style.display = 'block';
+                document.getElementById('mappingSection').style.display = 'block';
             }
         });
     };
 
-    function calculateABC() {
-        const artCol = document.getElementById('selectArticle').value;
-        const qtyCol = document.getElementById('selectQty').value;
+    function processABC() {
+        const aCol = document.getElementById('mapArt').value;
+        const qCol = document.getElementById('mapQty').value;
         
-        let aggregation = {};
+        let aggregate = {};
         rawData.forEach(row => {
-            let ref = row[artCol] ? row[artCol].trim() : '';
-            let val = parseFloat(String(row[qtyCol]).replace(/\s/g, '').replace(',', '.')) || 0;
-            if(ref) aggregation[ref] = (aggregation[ref] || 0) + val;
+            let ref = row[aCol] ? row[aCol].trim() : '';
+            let val = parseFloat(String(row[qCol]).replace(/\s/g, '').replace(',', '.')) || 0;
+            if(ref) aggregate[ref] = (aggregate[ref] || 0) + val;
         });
 
-        let sorted = Object.entries(aggregation).sort((a, b) => b[1] - a[1]);
-        let totalVolume = sorted.reduce((sum, item) => sum + item[1], 0);
+        let sorted = Object.entries(aggregate).sort((a, b) => b[1] - a[1]);
+        let total = sorted.reduce((sum, item) => sum + item[1], 0);
         
-        let cumulative = 0;
-        let counts = { A: 0, B: 0, C: 0 };
-        processedResults = [];
+        let cumul = 0;
+        let summary = { A: 0, B: 0, C: 0 };
+        finalResults = [];
 
-        sorted.forEach(([item, volume]) => {
-            cumulative += volume;
-            let percent = (cumulative / totalVolume) * 100;
-            let cls = percent <= 80.0001 ? 'A' : (percent <= 95.0001 ? 'B' : 'C');
-            counts[cls]++;
-            processedResults.push({ item, volume, cumulative, percent: percent.toFixed(2), cls });
+        sorted.forEach(([art, qte]) => {
+            cumul += qte;
+            let percentVal = (cumul / total) * 100;
+            let cls = percentVal <= 80.0001 ? 'A' : (percentVal <= 95.0001 ? 'B' : 'C');
+            summary[cls]++;
+            finalResults.push({ 
+                'Article': art, 
+                'Qté livr.': qte, 
+                'Cumul': cumul, 
+                '% Cumulé': percentVal.toFixed(2) + '%', 
+                'Classe': cls 
+            });
         });
 
-        // Rendu Tableau
-        const tbody = document.querySelector('#abcTable tbody');
-        tbody.innerHTML = processedResults.map(r => `
+        const tbody = document.querySelector('#tableABC tbody');
+        tbody.innerHTML = finalResults.map(r => `
             <tr>
-                <td>${r.item}</td>
-                <td>${r.volume}</td>
-                <td>${r.cumulative}</td>
-                <td>${r.percent}%</td>
-                <td class="tag-${r.cls}">${r.cls}</td>
+                <td>${r['Article']}</td>
+                <td>${r['Qté livr.']}</td>
+                <td>${r['Cumul']}</td>
+                <td>${r['% Cumulé']}</td>
+                <td class="cl-${r['Classe']}">${r['Classe']}</td>
             </tr>
         `).join('');
-        document.getElementById('resultsCard').style.display = 'block';
+        document.getElementById('resultsWrapper').style.display = 'block';
 
-        // Mise à jour Quotas
-        document.getElementById('qA').innerText = Math.ceil(counts.A * 0.33);
-        document.getElementById('qB').innerText = Math.ceil(counts.B * 0.16);
-        document.getElementById('qC').innerText = Math.ceil(counts.C * 0.08);
+        document.getElementById('valA').innerText = Math.ceil(summary.A * 0.33) + " articles";
+        document.getElementById('valB').innerText = Math.ceil(summary.B * 0.16) + " articles";
+        document.getElementById('valC').innerText = Math.ceil(summary.C * 0.08) + " articles";
     }
 
-    function downloadXLSX() {
-        const ws = XLSX.utils.json_to_sheet(processedResults);
+    function exportToExcel() {
+        // Cette partie crée le fichier Excel avec TOUTES les colonnes présentes dans finalResults
+        const ws = XLSX.utils.json_to_sheet(finalResults);
         const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "Analyse_ABC");
-        XLSX.writeFile(wb, "Rapport_ABC_Schneider.xlsx");
+        XLSX.utils.book_append_sheet(wb, ws, "Analyse_ABC_Complet");
+        XLSX.writeFile(wb, "Rapport_ABC_Avec_Pourcentages.xlsx");
     }
 </script>
 
