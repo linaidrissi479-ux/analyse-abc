@@ -2,151 +2,176 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Schneider Electric — ABC Digitalisation</title>
+    <title>Schneider Electric - Analyseur ABC</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
-        :root { --g:#009639; --bg:#f0f2f0; --s:#fff; --b:#e2e6e2; --t:#1a1f1a; --r:#c0392b; }
-        body { font-family:'DM Sans', sans-serif; background:var(--bg); color:var(--t); margin:0; padding:20px; }
-        .nav { background:var(--s); border-bottom:1px solid var(--b); height:55px; display:flex; align-items:center; padding:0 24px; gap:15px; margin:-20px -20px 20px -20px; }
-        .tabs { display:flex; gap:20px; margin-bottom:20px; border-bottom:1px solid var(--b); background:white; padding:0 20px; }
-        .tab { padding:15px 0; cursor:pointer; font-weight:600; color:#8a9b8a; border-bottom:3px solid transparent; }
-        .tab.active { color:var(--g); border-bottom-color:var(--g); }
-        .card { background:var(--s); border:1px solid var(--b); border-radius:12px; padding:20px; margin-bottom:20px; }
-        .config { display:flex; gap:15px; align-items:end; margin-bottom:20px; background:#f0f7f3; padding:15px; border-radius:8px; border:1px solid var(--g); }
-        .stats-grid { display:flex; gap:20px; margin-bottom:25px; }
-        .stat-card { flex:1; padding:15px; border-radius:8px; border:1px solid var(--b); text-align:center; background:white; }
-        .quota-box { background:#fdf0ef; color:var(--r); padding:8px; margin-top:10px; border-radius:4px; font-weight:bold; }
-        table { width:100%; border-collapse:collapse; font-size:13px; }
-        th { background:#f9faf9; padding:12px; text-align:left; border-bottom:2px solid var(--b); }
-        td { padding:10px 12px; border-bottom:1px solid var(--b); }
-        button { padding:10px 20px; background:var(--g); color:white; border:none; border-radius:6px; cursor:pointer; font-weight:600; }
-        .tag { padding:4px 8px; border-radius:4px; font-weight:700; font-size:11px; }
-        .tag-A { background:#fdeaea; color:#e74c3c; }
-        .tag-B { background:#fef9e7; color:#f1c40f; }
-        .tag-C { background:#eafaf1; color:#2ecc71; }
+        :root { --schneider-green: #009639; --bg-gray: #f4f4f4; --border: #d1d1d1; }
+        body { font-family: Arial, sans-serif; background-color: var(--bg-gray); margin: 0; padding: 20px; color: #333; }
+        .header { background-color: var(--schneider-green); color: white; padding: 15px; margin-bottom: 20px; }
+        .tabs { display: flex; margin-bottom: 20px; border-bottom: 2px solid var(--border); }
+        .tab { padding: 10px 20px; cursor: pointer; background: #eee; border: 1px solid var(--border); border-bottom: none; margin-right: 5px; font-weight: bold; }
+        .tab.active { background: white; border-top: 3px solid var(--schneider-green); color: var(--schneider-green); }
+        .card { background: white; padding: 20px; border: 1px solid var(--border); margin-bottom: 20px; }
+        .config-bar { background: #e9f5ed; padding: 15px; border: 1px solid var(--schneider-green); display: flex; gap: 15px; align-items: flex-end; }
+        .stats-container { display: flex; gap: 20px; margin-bottom: 20px; }
+        .stat-box { flex: 1; padding: 15px; border: 1px solid var(--border); text-align: center; background: white; }
+        .quota-num { font-size: 24px; font-weight: bold; color: #d9534f; display: block; margin: 10px 0; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 13px; }
+        th, td { border: 1px solid var(--border); padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        button { padding: 10px 15px; background-color: var(--schneider-green); color: white; border: none; cursor: pointer; font-weight: bold; }
+        button:hover { background-color: #007a2f; }
+        .tag-A { color: #d9534f; font-weight: bold; }
+        .tag-B { color: #f0ad4e; font-weight: bold; }
+        .tag-C { color: #5cb85c; font-weight: bold; }
     </style>
 </head>
 <body>
 
-<div class="nav">
-    <div style="font-weight:600">Schneider Electric — Analyseur Dynamique</div>
+<div class="header">
+    <h2 style="margin:0;">Système de Pilotage Inventaire</h2>
 </div>
 
 <div class="tabs">
-    <div class="tab active" onclick="switchTab('tab1')">1. ANALYSE ABC (80/15/5)</div>
-    <div class="tab" onclick="switchTab('tab2')">2. PLAN D'INVENTAIRE MENSUEL</div>
+    <div class="tab active" onclick="showTab('tab1')">ANALYSE ABC</div>
+    <div class="tab" onclick="showTab('tab2')">PLAN DE COMPTAGE</div>
 </div>
 
-<div id="tab1" class="content-div">
+<div id="tab1" class="tab-content">
     <div class="card">
-        <button onclick="document.getElementById('csv').click()">📁 Charger un NOUVEAU fichier (.csv)</button>
-        <input type="file" id="csv" accept=".csv" style="display:none">
+        <label>Importer fichier CSV : </label>
+        <input type="file" id="csvFile" accept=".csv">
         
-        <div id="setup" style="display:none; margin-top:20px;">
-            <div class="config">
-                <div><label>Choisir Article</label><br><select id="selA"></select></div>
-                <div><label>Choisir Quantité</label><br><select id="selQ"></select></div>
-                <button onclick="doAnalysis()">🔥 CALCULER LES NOUVELLES VALEURS</button>
+        <div id="columnSelection" style="display:none; margin-top:20px;">
+            <div class="config-bar">
+                <div>
+                    <label>Colonne Article</label><br>
+                    <select id="selectArticle"></select>
+                </div>
+                <div>
+                    <label>Colonne Quantité</label><br>
+                    <select id="selectQty"></select>
+                </div>
+                <button onclick="calculateABC()">Lancer le Calcul</button>
             </div>
         </div>
     </div>
 
-    <div id="resABC" class="card" style="display:none">
-        <table id="mainTable">
-            <thead><tr><th>Article</th><th>Volume</th><th>% Cumulé</th><th>Classe</th></tr></thead>
-            <tbody id="bodyABC"></tbody>
+    <div id="resultsCard" class="card" style="display:none">
+        <table id="abcTable">
+            <thead>
+                <tr>
+                    <th>Article</th>
+                    <th>Volume Total</th>
+                    <th>Cumul</th>
+                    <th>% Cumulé</th>
+                    <th>Classe</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
         </table>
     </div>
 </div>
 
-<div id="tab2" class="content-div" style="display:none">
+<div id="tab2" class="tab-content" style="display:none">
     <div class="card">
-        <h3>Quotas basés sur le fichier actuel</h3>
-        <div class="stats-grid">
-            <div class="stat-card"><b>CLASSE A</b><div class="quota-box" id="qA">0</div><small>33% du stock A</small></div>
-            <div class="stat-card"><b>CLASSE B</b><div class="quota-box" id="qB" style="color:#d4ac0d;">0</div><small>16% du stock B</small></div>
-            <div class="stat-card"><b>CLASSE C</b><div class="quota-box" id="qC" style="color:#27ae60;">0</div><small>8% du stock C</small></div>
+        <div class="stats-container">
+            <div class="stat-box">Classe A (33%) <span id="qA" class="quota-num">0</span></div>
+            <div class="stat-box">Classe B (16%) <span id="qB" class="quota-num" style="color:#f0ad4e">0</span></div>
+            <div class="stat-box">Classe C (8%) <span id="qC" class="quota-num" style="color:#5cb85c">0</span></div>
         </div>
-        <button onclick="exportExcel()" style="background:#1a1f1a; width:100%;">📥 EXPORTER LES DONNÉES CALCULÉES (.xlsx)</button>
+        <button onclick="downloadXLSX()" style="background:#333">Exporter vers Excel</button>
     </div>
 </div>
 
 <script>
-let currentFileRows = []; 
-let currentResults = [];
+    let rawData = [];
+    let processedResults = [];
 
-function switchTab(id) {
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    event.currentTarget.classList.add('active');
-    document.querySelectorAll('.content-div').forEach(d => d.style.display = 'none');
-    document.getElementById(id).style.display = 'block';
-}
+    function showTab(tabId) {
+        document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
+        document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+        document.getElementById(tabId).style.display = 'block';
+        event.currentTarget.classList.add('active');
+    }
 
-// CETTE FONCTION VIDE TOUT AVANT DE CHARGER
-document.getElementById('csv').onchange = e => {
-    // Reset complet
-    currentFileRows = []; 
-    currentResults = [];
-    document.getElementById('resABC').style.display = 'none';
-    document.getElementById('setup').style.display = 'none';
+    document.getElementById('csvFile').onchange = function(e) {
+        // Reset des données précédentes
+        rawData = [];
+        processedResults = [];
+        document.getElementById('resultsCard').style.display = 'none';
+        
+        Papa.parse(e.target.files[0], {
+            header: true,
+            skipEmptyLines: true,
+            complete: function(results) {
+                rawData = results.data;
+                const fields = results.meta.fields;
+                const selA = document.getElementById('selectArticle');
+                const selQ = document.getElementById('selectQty');
+                selA.innerHTML = ''; selQ.innerHTML = '';
+                fields.forEach(f => {
+                    selA.add(new Option(f, f));
+                    selQ.add(new Option(f, f));
+                });
+                document.getElementById('columnSelection').style.display = 'block';
+            }
+        });
+    };
 
-    Papa.parse(e.target.files[0], {
-        header: true, skipEmptyLines: true,
-        complete: function(r) {
-            currentFileRows = r.data;
-            const f = r.meta.fields;
-            const sA = document.getElementById('selA'), sQ = document.getElementById('selQ');
-            sA.innerHTML = ''; sQ.innerHTML = '';
-            f.forEach(x => { sA.add(new Option(x, x)); sQ.add(new Option(x, x)); });
-            document.getElementById('setup').style.display = 'block';
-        }
-    });
-};
+    function calculateABC() {
+        const artCol = document.getElementById('selectArticle').value;
+        const qtyCol = document.getElementById('selectQty').value;
+        
+        let aggregation = {};
+        rawData.forEach(row => {
+            let ref = row[artCol] ? row[artCol].trim() : '';
+            let val = parseFloat(String(row[qtyCol]).replace(/\s/g, '').replace(',', '.')) || 0;
+            if(ref) aggregation[ref] = (aggregation[ref] || 0) + val;
+        });
 
-function doAnalysis() {
-    const aCol = document.getElementById('selA').value;
-    const qCol = document.getElementById('selQ').value;
-    
-    let stats = {};
-    currentFileRows.forEach(r => {
-        let a = String(r[aCol] || '').trim().toUpperCase();
-        let q = parseFloat(String(r[qCol] || '0').replace(/\s/g,'').replace(',','.')) || 0;
-        if(a) stats[a] = (stats[a] || 0) + q;
-    });
+        let sorted = Object.entries(aggregation).sort((a, b) => b[1] - a[1]);
+        let totalVolume = sorted.reduce((sum, item) => sum + item[1], 0);
+        
+        let cumulative = 0;
+        let counts = { A: 0, B: 0, C: 0 };
+        processedResults = [];
 
-    let sorted = Object.entries(stats).sort((a,b) => b[1] - a[1]);
-    let totVol = sorted.reduce((s,x) => s + x[1], 0);
-    let cum = 0, counts = {A:0, B:0, C:0};
-    currentResults = [];
+        sorted.forEach(([item, volume]) => {
+            cumulative += volume;
+            let percent = (cumulative / totalVolume) * 100;
+            let cls = percent <= 80.0001 ? 'A' : (percent <= 95.0001 ? 'B' : 'C');
+            counts[cls]++;
+            processedResults.push({ item, volume, cumulative, percent: percent.toFixed(2), cls });
+        });
 
-    sorted.forEach(([ref, q]) => {
-        cum += q;
-        let p = (cum/totVol)*100;
-        let cl = p <= 80.0001 ? 'A' : (p <= 95.0001 ? 'B' : 'C');
-        counts[cl]++;
-        currentResults.push({ Article: ref, Volume: Math.round(q), Pourcent: p.toFixed(2), Classe: cl });
-    });
+        // Rendu Tableau
+        const tbody = document.querySelector('#abcTable tbody');
+        tbody.innerHTML = processedResults.map(r => `
+            <tr>
+                <td>${r.item}</td>
+                <td>${r.volume}</td>
+                <td>${r.cumulative}</td>
+                <td>${r.percent}%</td>
+                <td class="tag-${r.cls}">${r.cls}</td>
+            </tr>
+        `).join('');
+        document.getElementById('resultsCard').style.display = 'block';
 
-    // Mise à jour Affichage
-    document.getElementById('bodyABC').innerHTML = currentResults.map(i => `
-        <tr><td>${i.Article}</td><td>${i.Volume}</td><td>${i.Pourcent}%</td><td><span class="tag tag-${i.Classe}">${i.Classe}</span></td></tr>
-    `).join('');
-    document.getElementById('resABC').style.display = 'block';
+        // Mise à jour Quotas
+        document.getElementById('qA').innerText = Math.ceil(counts.A * 0.33);
+        document.getElementById('qB').innerText = Math.ceil(counts.B * 0.16);
+        document.getElementById('qC').innerText = Math.ceil(counts.C * 0.08);
+    }
 
-    // Mise à jour Quotas
-    document.getElementById('qA').innerText = Math.ceil(counts.A * 0.33) + " articles";
-    document.getElementById('qB').innerText = Math.ceil(counts.B * 0.16) + " articles";
-    document.getElementById('qC').innerText = Math.ceil(counts.C * 0.08) + " articles";
-}
-
-function exportExcel() {
-    const ws = XLSX.utils.json_to_sheet(currentResults);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Calculs");
-    XLSX.writeFile(wb, "Nouveaux_Calculs_Schneider.xlsx");
-}
+    function downloadXLSX() {
+        const ws = XLSX.utils.json_to_sheet(processedResults);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Analyse_ABC");
+        XLSX.writeFile(wb, "Rapport_ABC_Schneider.xlsx");
+    }
 </script>
+
 </body>
 </html>
