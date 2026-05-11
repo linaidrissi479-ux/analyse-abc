@@ -559,13 +559,12 @@ function exportExcel(){
     const targets = inventoryTargets(counts);
 
     const rows = processedResults.map(r=>({
-        Article:r.article,
-        Quantite_Totale:r.qty,
-        Frequence:r.frequency,
-        Frequence_Cumulee:r.cumulativeFrequency,
-        Classe:r.cls
-    }));
-
+    Article:r.article,
+    Quantite_Totale:r.qty,
+    Frequence:(r.frequency * 100).toFixed(2) + ' %',
+    Frequence_Cumulee:(r.cumulativeFrequency * 100).toFixed(2) + ' %',
+    Classe:r.cls
+}));
     const resume = [
         {Classe:'A', Articles_Classe:counts.A, Pourcentage_Inventaire:'33%', Articles_A_Inventorier:targets.A},
         {Classe:'B', Articles_Classe:counts.B, Pourcentage_Inventaire:'16%', Articles_A_Inventorier:targets.B},
