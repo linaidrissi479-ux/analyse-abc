@@ -6,48 +6,40 @@
 
 <style>
 body{margin:0;font-family:Arial;background:#f4f6f8}
-.tabs{
-  display:flex;
-  background:#009639;
-}
+.tabs{display:flex;background:#009639}
 .tab{
   padding:15px 25px;
   cursor:pointer;
   color:white;
   font-weight:bold;
 }
-.tab.active{
-  background:#007a2f;
-}
-.page{
-  display:none;
-}
-.page.active{
-  display:block;
-}
-iframe{
-  width:100%;
-  height:100vh;
-  border:none;
-}
+.tab.active{background:#007a2f}
+.page{display:none;padding:20px}
+.page.active{display:block}
 </style>
 </head>
 
 <body>
 
 <div class="tabs">
-  <div class="tab active" onclick="showTab(0)">Nouveau système</div>
-  <div class="tab" onclick="showTab(1)">Ancien système</div>
+  <div class="tab active" onclick="showTab(0)">Inventaire</div>
+  <div class="tab" onclick="showTab(1)">Analyse ABC</div>
 </div>
 
 <!-- ONGLET 1 -->
 <div class="page active">
-  <iframe src="nouveau.html"></iframe>
+<!-- COLLE ICI TON DERNIER HTML INVENTAIRE (SANS <html> <head> <body>) -->
+<div id="inventaireApp">
+    <!-- 🔴 TU COLLES TON DERNIER HTML ICI -->
+</div>
 </div>
 
 <!-- ONGLET 2 -->
 <div class="page">
-  <iframe src="ancien.html"></iframe>
+<!-- COLLE ICI TON HTML ABC -->
+<div id="abcApp">
+    <!-- 🔴 TU COLLES TON HTML ABC ICI -->
+</div>
 </div>
 
 <script>
