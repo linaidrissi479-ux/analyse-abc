@@ -1,23 +1,68 @@
-<!-- REMPLACE UNIQUEMENT CES PARTIES DANS TON HTML EXISTANT -->
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Dashboard Inventaire + ABC</title>
 
-<!-- ❌ AVANT -->
-<div class="note">
-Le tableau du haut contient tout le stock. Le tableau du bas contient uniquement les articles sélectionnés selon A = 33%, B = 16%, C = 8%, avec 1 ligne par article pour que le comptage corresponde exactement aux KPI. Les deux tableaux ont exactement les mêmes colonnes. Les lignes sont triées A puis B puis C.
+<style>
+body{margin:0;font-family:Arial;background:#f4f6f8}
+
+.tabs{
+  display:flex;
+  background:#009639;
+}
+
+.tab{
+  padding:15px 25px;
+  cursor:pointer;
+  color:white;
+  font-weight:bold;
+}
+
+.tab.active{
+  background:#007a2f;
+}
+
+.page{
+  display:none;
+}
+
+.page.active{
+  display:block;
+}
+
+iframe{
+  width:100%;
+  height:calc(100vh - 60px);
+  border:none;
+}
+</style>
+</head>
+
+<body>
+
+<div class="tabs">
+  <div class="tab active" onclick="showTab(0,this)">Inventaire</div>
+  <div class="tab" onclick="showTab(1,this)">Analyse ABC</div>
 </div>
 
-<!-- ✅ APRÈS (SUPPRIMÉ) -->
-<!-- (rien ici) -->
+<div class="page active">
+  <iframe src="inventaire.html"></iframe>
+</div>
 
+<div class="page">
+  <iframe src="abc.html"></iframe>
+</div>
 
-<!-- ❌ AVANT -->
-els.extraInfo.innerHTML =
-    `Quotas appliqués sur articles uniques : ` +
-    `A=${quotaA.target}/${quotaA.total} (${Math.round(quotaA.target/quotaA.total*100 || 0)}%), ` +
-    `B=${quotaB.target}/${quotaB.total} (${Math.round(quotaB.target/quotaB.total*100 || 0)}%), ` +
-    `C=${quotaC.target}/${quotaC.total} (${Math.round(quotaC.target/quotaC.total*100 || 0)}%). ` +
-    `Dernier mois évité : <b>${latestMonthName || 'aucun historique'}</b>. ` +
-    `Articles détectés à éviter : <b>${latestMonthItems.size}</b>.`;
+<script>
+function showTab(index,el){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
 
-<!-- ✅ APRÈS -->
-els.extraInfo.innerHTML = '';
-        
+  el.classList.add('active');
+  document.querySelectorAll('.page')[index].classList.add('active');
+}
+</script>
+
+</body>
+</html>
